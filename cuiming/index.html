@@ -9,6 +9,7 @@
     <script src="js/underscore-1.3.1.js"></script>
     <script src="js/backbone.js"></script>
     <script src="js/backbone-localstorage.js"></script>
+    <script src="js/moment.min.js"></script>
     <script src="js/todos.js"></script>
 </head>
 <body>
@@ -33,7 +34,8 @@
     <li>Double-click to edit a todo.</li>
 </ul>
 <div id="credits">
-    <a href="http://weibo.com/nanfang05">@BigFool南方</a> make this toy based on <a href="http://documentcloud.github.com/backbone/docs/todos.html">Backbone Todo</a>
+    <a href="http://weibo.com/nanfang05">@BigFool南方</a> make this toy based on <a
+        href="http://documentcloud.github.com/backbone/docs/todos.html">Backbone Todo</a>
 </div>
 <script type="text/template" id="item-template">
     <div class="todo <%= done ? 'done' : '' %>">
@@ -43,20 +45,41 @@
             <div class="todo-action">
                 action
                 <ul>
-                    <li>1 hour later</li>
-                    <li>2 hour later</li>
-                    <li>5 hour later</li>
-                    <li>Schedule</li>
+                    <li class="defer" data-hours="1">1 hour later</li>
+                    <li class="defer" data-hours="2">2 hour later</li>
+                    <li class="defer" data-hours="5">5 hour later</li>
+                    <li class="schedule">Schedule</li>
                     <li class="todo-destroy">Done</li>
                 </ul>
-            </span>
-            <!---->
+                </span>
+                <!---->
+            </div>
         </div>
         <div class="edit">
             <input class="todo-input" type="text" value=""/>
         </div>
     </div>
 </script>
+
+<script type="text/template" id="wait-item-template">
+    <div class="todo <%= done ? 'done' : '' %>">
+        <div class="display">
+            <input class="check" type="checkbox" <%= done ? 'checked="checked"' : '' %> />
+            <div class="todo-text"></div>
+            <div class="todo-schedule">
+                <span class="time"></span>
+                <ul>
+                    <li class="do-it">Do it now</li>
+                    <li class="todo-destroy">Done</li>
+                </ul>
+            </div>
+        </div>
+        <div class="edit">
+            <input class="todo-input" type="text" value=""/>
+        </div>
+    </div>
+</script>
+
 
 <script type="text/template" id="stats-template">
     <% if (total) { %>

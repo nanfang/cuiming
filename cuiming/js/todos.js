@@ -28,14 +28,14 @@ $(function () {
             return this.last().get('order') + 1;
         },
         comparator:function (todo) {
-            return todo.get('order');
+            return todo.get("schedule") || todo.get('order');
         }
     });
 
     window.Todos = new TodoList;
-    Todos.localStorage =new Store("todos");
+    Todos.localStorage = new Store("todos");
     window.Waits = new TodoList;
-    Waits.localStorage =new Store("waits");
+    Waits.localStorage = new Store("waits");
 
     window.TodoView = Backbone.View.extend({
         tagName:"li",
@@ -44,6 +44,8 @@ $(function () {
             "click .check":"toggleDone",
             "dblclick div.todo-text":"edit",
             "click li.todo-destroy":"clear",
+            "click li.defer":"defer",
+            "click li.do-it":"doit",
             "click span.todo-schedule":"schedule",
             "keypress .todo-input":"updateOnEnter"
         },
@@ -59,6 +61,9 @@ $(function () {
         setText:function () {
             var text = this.model.get('text');
             this.$('.todo-text').text(text);
+            if(this.$('.todo-schedule') && this.model.get('schedule')){
+                this.$('.todo-schedule .time').text(moment(this.model.get('schedule')).format('hh:mm MM-DD'));
+            }
             this.input = this.$('.todo-input');
             this.input.bind('blur', _.bind(this.close, this)).val(text);
         },
@@ -82,10 +87,24 @@ $(function () {
         clear:function () {
             this.model.destroy();
         },
-        schedule:function(){
+        defer:function (e) {
+            var deferHours = parseInt($(e.target).data('hours'));
+            this.model.destroy();
+            Waits.create({id:this.model.get('id'), text:this.model.get('text'), schedule: moment().add('h', deferHours).valueOf()});
+        },
+        doit:function(e){
+            this.model.destroy();
+            Todos.create({id:this.model.get('id'), text:this.model.get('text'), schedule: null});
+        },
+        schedule:function () {
             this.model.destroy();
             Waits.create({id:this.model.get('id'), text:this.model.get('text')});
         }
+    });
+
+    window.WaitView = TodoView.extend({
+        template:_.template($('#wait-item-template').html())
+
     });
 
     window.AppView = Backbone.View.extend({
@@ -103,7 +122,7 @@ $(function () {
             Todos.bind('all', this.render, this);
             Todos.fetch();
 
-            Waits.bind('add', this.addWait, this);
+            Waits.bind('add', this.refreshWaits, this);
             Waits.bind('reset', this.addAllWaits, this);
             Waits.fetch();
         },
@@ -118,12 +137,16 @@ $(function () {
             var view = new TodoView({model:todo});
             $("#todo-list").append(view.render().el);
         },
-        addWait:function(todo){
-            var view = new TodoView({model:todo});
+        addWait:function (todo) {
+            var view = new WaitView({model:todo});
             $("#wait-list").append(view.render().el);
         },
         addAll:function () {
             Todos.each(this.addTodo);
+        },
+        refreshWaits:function () {
+            $("#wait-list").empty();
+            Waits.each(this.addWait);
         },
         addAllWaits:function () {
             Waits.each(this.addWait);
