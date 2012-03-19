@@ -46,7 +46,7 @@ $(function () {
             "click li.todo-destroy":"clear",
             "click li.defer":"defer",
             "click li.do-it":"doit",
-            "click span.todo-schedule":"schedule",
+            "click li .schedule":"schedule",
             "keypress .todo-input":"updateOnEnter"
         },
         initialize:function () {
@@ -55,13 +55,28 @@ $(function () {
         },
         render:function () {
             $(this.el).html(this.template(this.model.toJSON()));
-            this.setText();
-            return this;
+            var me = this;
+            me.setText();
+            me.$('.schedule-picker').datetimepicker({
+                onClose:function (dateText, inst) {
+                    me.scheduleDone();
+                },
+                onSelect:function (dateText, inst) {
+                    me.model.schedule=moment(dateText, "MM/DD/YYYY hh:mm:ss").valueOf();
+
+                }
+            });
+            return me;
+        },
+        scheduleDone:function () {
+            if((this.model.schedule - moment().valueOf()) > 5 * 60 * 1000){
+                this.scheduleAt(this.model.schedule);
+            }
         },
         setText:function () {
             var text = this.model.get('text');
             this.$('.todo-text').text(text);
-            if(this.$('.todo-schedule') && this.model.get('schedule')){
+            if (this.$('.todo-schedule') && this.model.get('schedule')) {
                 this.$('.todo-schedule .time').text(moment(this.model.get('schedule')).format('hh:mm MM-DD'));
             }
             this.input = this.$('.todo-input');
@@ -89,16 +104,18 @@ $(function () {
         },
         defer:function (e) {
             var deferHours = parseInt($(e.target).data('hours'));
-            this.model.destroy();
-            Waits.create({id:this.model.get('id'), text:this.model.get('text'), schedule: moment().add('h', deferHours).valueOf()});
+            this.scheduleAt(moment().add('h', deferHours).valueOf());
         },
-        doit:function(e){
+        scheduleAt:function(timestamp){
             this.model.destroy();
-            Todos.create({id:this.model.get('id'), text:this.model.get('text'), schedule: null});
+            Waits.create({id:this.model.get('id'), text:this.model.get('text'), schedule:timestamp});
+        },
+        doit:function (e) {
+            this.model.destroy();
+            Todos.create({id:this.model.get('id'), text:this.model.get('text'), schedule:null});
         },
         schedule:function () {
-            this.model.destroy();
-            Waits.create({id:this.model.get('id'), text:this.model.get('text')});
+            this.$('.schedule-picker').focus();
         }
     });
 
@@ -178,4 +195,6 @@ $(function () {
 
 
     window.App = new AppView;
+
+
 });
